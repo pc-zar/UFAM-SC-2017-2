@@ -3,35 +3,35 @@
 #include "file.h"
 
 
-struct Processo {
+struct noProcesso {
 	int pid;
 	int tempoIngresso;
 	int duracao;
 	int prioridade;
 	int tipo;
-	struct Processo* prox;
+	struct noProcesso* prox;
 };
 
 int main(void) {
-	//FILE* f;
-	//f = fopen("processos.txt", "r");
+	struct noProcesso *plist, *ptmp;
+    	plist       = init(1, 4, 2, 0, 0);
+        plist->prox = init(2, 1, 1, 0, 0); ptmp = plist->prox;
+	ptmp->prox  = init(3, 4, 2, 0, 0); ptmp = ptmp->prox;
+	ptmp->prox  = init(4, 0, 3, 0, 0); ptmp = ptmp->prox;
+	ptmp->prox  = init(5, 2, 2, 0, 0);
 	
-	struct Processo *plist, *ptmp;
-    	plist       = init(1, 0, 1, 0, 0);
-        plist->prox = init(2, 0, 1, 0, 0); ptmp = plist->prox;
-	ptmp->prox  = init(3, 0, 1, 0, 0); ptmp = ptmp->prox;
-	ptmp->prox  = init(4, 0, 1, 0, 0); ptmp = ptmp->prox;
-	ptmp->prox  = init(5, 0, 1, 0, 0);
-	
-	listaProcessos(plist);
+	//tt = 4
+	//tw = 2
 
-	//printf("Hello World");
+	printf("PROCESSOS ANTES DO ESCALONAMENTO:\n");	
+	printListaProcessos(plist);
+
 	return 0;
 };
 
-struct Processo *init(int pid, int tempoIngresso, int duracao, int prioridade, int tipo){
-	struct Processo *proc;
- 	proc = (struct Processo*)malloc(sizeof(struct Processo)); 
+struct noProcesso *init(int pid, int tempoIngresso, int duracao, int prioridade, int tipo){
+	struct noProcesso *proc;
+ 	proc = (struct noProcesso*)malloc(sizeof(struct noProcesso)); 
   	if (proc == NULL) {
 		printf("Erro!");
 		exit(1);
@@ -46,11 +46,25 @@ struct Processo *init(int pid, int tempoIngresso, int duracao, int prioridade, i
 	return(proc);
 };
 
-void listaProcessos(struct Processo *proc){
-	struct Processo *t = proc;
-	while(t != NULL){
-		printf("%d\n", t->pid);
-		t = t->prox;
+void printListaProcessos(struct noProcesso *proc){
+	while(proc != NULL){
+		printf("PID: %d | tempo: %d | dur: %d | prio: %d | tipo: %d \n", 
+				proc->pid, proc->tempoIngresso, proc->duracao, proc->prioridade, proc->tipo);
+		proc = proc->prox;
 	};
 	printf("\n");
+};
+
+
+void fcfs(struct noProcesso *proc){
+	int aux = 0;
+	
+
+
+
+
+
+
+
+
 };
