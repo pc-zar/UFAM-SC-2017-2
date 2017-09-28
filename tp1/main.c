@@ -16,19 +16,26 @@ int main(void) {
 	//FILE* f;
 	//f = fopen("processos.txt", "r");
 	
+	struct Processo *plist, *ptmp;
+    	plist       = init(1, 0, 1, 0, 0);
+        plist->prox = init(2, 0, 1, 0, 0); ptmp = plist->prox;
+	ptmp->prox  = init(3, 0, 1, 0, 0); ptmp = ptmp->prox;
+	ptmp->prox  = init(4, 0, 1, 0, 0); ptmp = ptmp->prox;
+	ptmp->prox  = init(5, 0, 1, 0, 0);
 	
+	listaProcessos(plist);
 
-	printf("Hello World");
+	//printf("Hello World");
 	return 0;
-}
+};
 
-struct Processo* init(int pid, int tempoIngresso, int duracao, int prioridade, int tipo){
-	struct Processo* proc;
+struct Processo *init(int pid, int tempoIngresso, int duracao, int prioridade, int tipo){
+	struct Processo *proc;
  	proc = (struct Processo*)malloc(sizeof(struct Processo)); 
   	if (proc == NULL) {
-       	 printf("Erro!");
-       	 exit(1);
-   	 };
+		printf("Erro!");
+		exit(1);
+	};
     	
 	proc->pid = pid;
 	proc->tempoIngresso = tempoIngresso;
@@ -37,11 +44,13 @@ struct Processo* init(int pid, int tempoIngresso, int duracao, int prioridade, i
 	proc->tipo = tipo;
 	proc->prox = NULL;
 	return(proc);
-}
+};
 
-void listaProcessos(struct Processo* proc){
-	struct Processo* t = proc;
+void listaProcessos(struct Processo *proc){
+	struct Processo *t = proc;
 	while(t != NULL){
-		printf(t->pid, t->tempoIngresso, t->duracao, t->prioridade, t->tipo);
-	}	
-}
+		printf("%d\n", t->pid);
+		t = t->prox;
+	};
+	printf("\n");
+};
