@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 typedef struct NodeCliente{
@@ -7,90 +8,59 @@ typedef struct NodeCliente{
 	struct NodeCliente *prox;
 } nodeCliente_t ;
 
-int main(){
+//prototypes
+nodeCliente_t *initFila();
+void printLista(nodeCliente_t *head);
+int rand_range(int min_n, int max_n);
+
+int main(void){
 	srand(time(NULL));
-	nodeCliente_t *oficialHead, *sgtHead, *caboHead = NULL;
+	printLista(initFila());
+
+
+	return 0;
+}
+
+nodeCliente_t *initFila(){
+	nodeCliente_t *entrada = NULL;
 	int catTemp = 0;
 	int tempoTemp = 0;
-
 	for(int i = 0; i < 1000; i++){
 		catTemp = rand_range(0, 3);
 		switch(catTemp){
-			case 1:
-				tempoTemp = rand_range(4, 6);				
-				//caso seja a primeira vez q a lista esteja sendo preenchida
-				if(oficialHead == NULL){
-					oficialHead = malloc(sizeof(nodeCliente_t));
-					oficialHead->categoria = 1;
-					oficialHead->tempo = tempoTemp;
-					oficialHead->prox = NULL;
-				//caso a lista já possua uma head, adicionar um item a lista
-				} else {
-					nodeCliente_t *atual = oficialHead;
-
-					while(atual->prox != NULL){
-						atual = atual->prox;
-					}
-
-					atual->prox = malloc(sizeof(nodeCliente_t));
-					atual->prox->categoria = 1;
-					atual->prox->tempo = tempoTemp;
-					atual->prox->prox = NULL;
-				}
+			case 1: //oficial
+				tempoTemp = rand_range(4, 6);
 				break;
-			case 2:
-				tempoTemp = rand_range(2, 4);				
-				//caso seja a primeira vez q a lista esteja sendo preenchida
-				if(sgtHead == NULL){
-					sgtHead = malloc(sizeof(nodeCliente_t));
-					sgtHead->categoria = 2;
-					sgtHead->tempo = tempoTemp;
-					sgtHead->prox = NULL;
-				//caso a lista já possua uma head, adicionar um item a lista
-				} else {
-					nodeCliente_t *atual = sgtHead;
-
-					while(atual->prox != NULL){
-						atual = atual->prox;
-					}
-
-					atual->prox = malloc(sizeof(nodeCliente_t));
-					atual->prox->categoria = 2;
-					atual->prox->tempo = tempoTemp;
-					atual->prox->prox = NULL;
-				}
+			case 2: //sgt
+				tempoTemp = rand_range(2, 4);
 				break;
-			case 3:
-				tempoTemp = rand_range(1, 3);				
-				//caso seja a primeira vez q a lista esteja sendo preenchida
-				if(caboHead == NULL){
-					caboHead = malloc(sizeof(nodeCliente_t));
-					caboHead->categoria = 3;
-					caboHead->tempo = tempoTemp;
-					caboHead->prox = NULL;
-				//caso a lista já possua uma head, adicionar um item a lista
-				} else {
-					nodeCliente_t *atual = caboHead;
-
-					while(atual->prox != NULL){
-						atual = atual->prox;
-					}
-
-					atual->prox = malloc(sizeof(nodeCliente_t));
-					atual->prox->categoria = 3;
-					atual->prox->tempo = tempoTemp;
-					atual->prox->prox = NULL;
-				}
+			case 3: //cabo
+				tempoTemp = rand_range(1, 3);					
 				break;
-			case 0:
-				printf("PAUSA!\n");	
+			default: //pausa
+				tempoTemp = 0;
 				break;
 		}
+
+		if(entrada == NULL){
+			entrada = malloc(sizeof(nodeCliente_t));
+			entrada->categoria = catTemp;
+			entrada->tempo = tempoTemp;
+			entrada->prox = NULL;
+		} else {
+			nodeCliente_t *temp = entrada;
+
+			while(temp->prox != NULL){
+				temp = temp->prox;
+			}
+
+			temp->prox = malloc(sizeof(nodeCliente_t));
+			temp->prox->categoria = catTemp;
+			temp->prox->tempo = tempoTemp;
+			temp->prox->prox = NULL;
+		}
 	}
-	printLista(oficialHead);
-	printLista(sgtHead);
-	printLista(caboHead);
-	return 0;
+	return(entrada);
 }
 
 
