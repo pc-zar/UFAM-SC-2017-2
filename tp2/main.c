@@ -17,7 +17,6 @@ int main(void){
 	srand(time(NULL));
 	printLista(initFila());
 
-
 	return 0;
 }
 
@@ -76,8 +75,3 @@ void printLista(nodeCliente_t *head){
 int rand_range(int min_n, int max_n){
 	return rand() % (max_n - min_n + 1) + min_n;
 }
-
-
-
-
-
