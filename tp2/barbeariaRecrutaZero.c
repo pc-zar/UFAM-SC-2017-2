@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <pthread.h>
+
+#define MAX_CLIENTES 1000
+#define MAX_BARBEARIA 20
+#define MAX_BARBEIROS 1
 
 typedef struct NodeCliente{
 	int categoria;
@@ -9,22 +14,31 @@ typedef struct NodeCliente{
 } nodeCliente_t ;
 
 //prototypes
-nodeCliente_t *initFila();
+nodeCliente_t *initFilaEspera();
 void printLista(nodeCliente_t *head);
 int rand_range(int min_n, int max_n);
 
 int main(void){
 	srand(time(NULL));
-	printLista(initFila());
+	pthread_t clientes[MAX_CLEINTES];
+	pthread_t barbeiros[MAX_BARBEIROS];
+
+	nodeCliente_t *filaEspera, *oficial, *sgt, *cabo;
+	int qtdClientes = 0;
+	
+	filaEspera = initFilaEspera();
+	oficial = NULL;
+	sgt = NULL;
+	cabo = NULL;
 
 	return 0;
 }
 
-nodeCliente_t *initFila(){
+nodeCliente_t *initFilaEspera(){
 	nodeCliente_t *entrada = NULL;
 	int catTemp = 0;
 	int tempoTemp = 0;
-	for(int i = 0; i < 1000; i++){
+	for(int i = 0; i < MAX_CLIENTES; i++){
 		catTemp = rand_range(0, 3);
 		switch(catTemp){
 			case 1: //oficial
