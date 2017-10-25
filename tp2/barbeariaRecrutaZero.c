@@ -19,27 +19,72 @@ typedef struct NodeCliente{
 //prototypes
 nodeCliente_t *initFilaEspera();
 void printLista(nodeCliente_t *head);
-nodeCliente_t *appendCliente(nodeCliente_t *head, int catTemp, int tempoTemp);
+nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp);
 nodeCliente_t *criaNode();
+int qtdAtualBarbearia(nodeCliente_t *oficial, nodeCliente_t *sgt, nodeCliente_t *cabo);
 int rand_range(int min_n, int max_n);
 
 
 int main(void){
 	srand(time(NULL));
-	pthread_t clientes[MAX_CLIENTES];
-	pthread_t barbeiros[MAX_BARBEIROS];
-
-	nodeCliente_t *filaEspera, *oficial, *sgt, *cabo;
-	int qtdClientes = 0;
+	nodeCliente_t *filaEspera, *oficial, *sgt, *cabo, *cursor;
 	
 	filaEspera = initFilaEspera();
 	oficial = NULL;
 	sgt = NULL;
 	cabo = NULL;
 
-	printLista(filaEspera);
+	cursor = filaEspera;
+	while(cursor != NULL){
+		if(qtdAtualBarbearia(oficial, sgt, cabo) < MAX_BARBEARIA){
+			switch(cursor->categoria){
+				case 1:
+					oficial = appendeNodeCliente(oficial, 1, cursor->tempo);
+					break;
+				case 2:
+					sgt = appendeNodeCliente(sgt, 2, cursor->tempo);
+					break;
+				case 3:
+					cabo = appendeNodeCliente(cabo, 3, cursor->tempo);
+					break;
+				default:
+					printf("PASUDASDHJAKDHJKDHADSJDA");
+					break;
+			
+			}
+		} else {
+			printf("BARBEARIA CHEIA!!!!");
+		}
+		cursor = cursor->prox;
+	}	
 
 	return 0;
+}
+
+int qtdAtualBarbearia(nodeCliente_t *oficial, nodeCliente_t *sgt, nodeCliente_t *cabo){
+	int qtd = 0;
+	nodeCliente_t *cursor = oficial;
+
+	while(cursor != NULL){
+		qtd++;
+		cursor = cursor->prox;
+	}
+
+	cursor = sgt;
+
+	while(cursor != NULL){
+		qtd++;
+		cursor = cursor->prox;
+	}
+	
+	cursor = cabo;
+
+	while(cursor != NULL){
+		qtd++;
+		cursor = cursor->prox;
+	}
+
+	return qtd;
 }
 
 nodeCliente_t *initFilaEspera(){
@@ -62,7 +107,7 @@ nodeCliente_t *initFilaEspera(){
 				tempoTemp = 0;
 				break;
 		}
-		entrada = appendCliente(entrada, catTemp, tempoTemp);
+		entrada = appendNodeCliente(entrada, catTemp, tempoTemp);
 	}
 	return(entrada);
 }
@@ -87,7 +132,7 @@ nodeCliente_t *criaNode(int catTemp, int tempoTemp){
 	return node; 
 }
 
-nodeCliente_t *appendCliente(nodeCliente_t *head, int catTemp, int tempoTemp){
+nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp){
 	if(head == NULL){
 		head = (nodeCliente_t*)malloc(sizeof(nodeCliente_t));
 		head->categoria = catTemp;
