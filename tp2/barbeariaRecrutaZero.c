@@ -8,13 +8,18 @@
 #define MAX_BARBEARIA 20
 #define MAX_BARBEIROS 1
 
-sem_t oficial, sgt, cabo;
-
 typedef struct NodeCliente{
 	int categoria;
 	int tempo;
 	struct NodeCliente *prox;
 } nodeCliente_t ;
+
+typedef struct taddParamsStruct {
+	nodeCliente_t *head;
+	int categoria;
+	int tempo;
+	int qtdAtual;
+} taddParams_t;
 
 //prototypes
 nodeCliente_t *initFilaEspera();
@@ -23,12 +28,13 @@ nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp
 nodeCliente_t *criaNode();
 int qtdAtualBarbearia(nodeCliente_t *oficial, nodeCliente_t *sgt, nodeCliente_t *cabo);
 int rand_range(int min_n, int max_n);
-
+void *sgtTainhaTentaAdd(void *data);
 
 int main(void){
 	srand(time(NULL));
 	nodeCliente_t *filaEspera, *oficial, *sgt, *cabo, *cursor;
-	
+	pthread_t tadd, trm;
+	taddParams_t taddArgs;
 	filaEspera = initFilaEspera();
 	oficial = NULL;
 	sgt = NULL;
@@ -36,27 +42,30 @@ int main(void){
 
 	cursor = filaEspera;
 	while(cursor != NULL){
-		if(qtdAtualBarbearia(oficial, sgt, cabo) < MAX_BARBEARIA){
-			switch(cursor->categoria){
-				case 1:
-					oficial = appendeNodeCliente(oficial, 1, cursor->tempo);
-					break;
-				case 2:
-					sgt = appendeNodeCliente(sgt, 2, cursor->tempo);
-					break;
-				case 3:
-					cabo = appendeNodeCliente(cabo, 3, cursor->tempo);
-					break;
-				default:
-					printf("PASUDASDHJAKDHJKDHADSJDA");
-					break;
-			
-			}
-		} else {
-			printf("BARBEARIA CHEIA!!!!");
+		switch(cursor->categoria){
+			case 1:
+				taddArgs.head = oficial;
+				taddArgs.categoria = cursor->categoria;
+				taddArgs.tempo = cursor->tempo;
+				taddArgs.qtdAtual = qtdAtualBarbearia(oficial, sgt, cabo);
+				pthread_create(&tadd, NULL, sgtTainhaTentaAdd, &taddArgs);
+				
+				break;
+			case 2:
+				printf("2\n");
+				break;
+			case 3:
+				printf("3\n");
+				break;
+			default:
+				printf("aaa\n");
+				break;
 		}
-		cursor = cursor->prox;
-	}	
+		//pthread_detach(tadd);
+		cursor = cursor->prox;	
+	}
+
+
 
 	return 0;
 }
@@ -153,6 +162,19 @@ nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp
 	}
 
 	return head;	
+}
+
+void *sgtTainhaTentaAdd(void *data){
+	printf("ENTROU NA THREAD!");	
+	taddParams_t *taddParams = data;	
+
+	if(taddParams->qtdAtual < MAX_BARBEARIA){	
+		taddParams->head = appendNodeCliente(taddParams->head, taddParams->categoria, taddParams->tempo);
+	} else {
+		printf("TA CHEIA PORRA!");
+	}	
+
+	return NULL;	
 }
 
 int rand_range(int min_n, int max_n){
