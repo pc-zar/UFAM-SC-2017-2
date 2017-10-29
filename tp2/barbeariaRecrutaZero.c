@@ -3,9 +3,10 @@
 #include <time.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <unistd.h>
 
-#define MAX_CLIENTES 1000
-#define MAX_BARBEARIA 20
+#define MAX_CLIENTES 15
+#define MAX_BARBEARIA 9
 #define MAX_BARBEIROS 1
 
 typedef struct NodeCliente{
@@ -14,13 +15,17 @@ typedef struct NodeCliente{
 	struct NodeCliente *prox;
 } nodeCliente_t ;
 
-typedef struct taddParamsStruct {
+typedef struct ClienteParams {
 	int categoria;
 	int tempo;
-} taddParams_t;
+} clienteParams_t;
+
+pthread_mutex_t lock;
+int qtdSleepTainha;
+int qtdPausas;
 
 //BARBEARIA
-nodeCliente_t *oficial, *sgt, *cabo;
+nodeCliente_t *filaEspera, *oficial, *sgt, *cabo;
 
 //prototypes
 nodeCliente_t *initFilaEspera();
@@ -28,55 +33,118 @@ void printLista(nodeCliente_t *head);
 nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp);
 nodeCliente_t *criaNode();
 int qtdAtualBarbearia();
+void printBarbearia();
 int rand_range(int min_n, int max_n);
-void *sgtTainhaTentaAdd(void *data);
+void *sgtTainha();
+void *recrutaZero();
 
 int main(void){
 	srand(time(NULL));
-	nodeCliente_t *filaEspera, *cursor;
-	pthread_t tadd, trm;
-	taddParams_t taddArgs;
-	
 	filaEspera = initFilaEspera();
+	int inputQtdSleepTainha = 0;
+	int qtdSleepTainhaLock = 1;
+	pthread_t tSgtTainha, tRecrutaZero;
 	oficial = NULL;
 	sgt = NULL;
 	cabo = NULL;
-	cursor = filaEspera;	
 
-	while(cursor != NULL){
-		if(cursor->categoria != 0){
-			taddArgs.categoria = cursor->categoria;
-			taddArgs.tempo = cursor->tempo;
-			pthread_create(&tadd, NULL, sgtTainhaTentaAdd, &taddArgs);	
+	while(qtdSleepTainhaLock == 1){	
+		printf("Por quanto tempo (em segundos) Sgt. Tainha deve dormir? (escolha de 1 ate 5):");
+		scanf("%d", &inputQtdSleepTainha);
+
+		if((inputQtdSleepTainha >= 1) && (inputQtdSleepTainha <= 5)){
+			qtdSleepTainha = inputQtdSleepTainha;
+			qtdSleepTainhaLock = 0;
+		} else {
+			printf("ESCOLHA DE 1 ATE 5!\n\n");
 		}
-		pthread_join(tadd, NULL);
-		pthread_detach(tadd);
-		cursor = cursor->prox;	
 	}
-	printLista(oficial);
-	printLista(sgt);
-	printLista(cabo);
+	
+	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
+	pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
+
+	pthread_join(tSgtTainha, NULL);
+	pthread_join(tRecrutaZero, NULL);
 	return 0;
 }
 
-void *sgtTainhaTentaAdd(void *data){
-	taddParams_t *taddParams = data;	
-	
-	if(qtdAtualBarbearia() < MAX_BARBEARIA){
-		switch(taddParams->categoria){
-			case 1:
-				oficial = appendNodeCliente(oficial, 1, taddParams->tempo);
-				break;
-			case 2:
-				sgt = appendNodeCliente(sgt, 2, taddParams->tempo);
-				break;
-			case 3:
-				cabo = appendNodeCliente(cabo, 3, taddParams->tempo);
-				break;
-		}
+void *recrutaZero(){
+	nodeCliente_t *cursor = oficial;
+
+	while(cursor != NULL){
+		qtd++;
+		cursor = cursor->prox;
 	}
-	pthread_exit(NULL);	
-	return NULL;	
+
+	cursor = sgt;
+
+	while(cursor != NULL){
+		qtd++;
+		cursor = cursor->prox;
+	}
+	
+	cursor = cabo;
+
+	while(cursor != NULL){
+		qtd++;
+		cursor = cursor->prox;
+	}
+	
+		
+	while()
+
+}
+
+void *sgtTainha(){
+	qtdPausas = 0;
+	nodeCliente_t *cursor;
+	cursor = filaEspera;
+	
+	while((cursor != NULL) && (qtdPausas != 3)){
+		if(qtdAtualBarbearia() < MAX_BARBEARIA){
+			if(cursor->categoria != 0){
+				switch(cursor->categoria){
+					pthread_mutex_lock(&lock);
+					case 1:
+						printf("INSERIU EM OFICIAL!\n");
+						oficial = appendNodeCliente(oficial, 1, cursor->tempo);	
+						break;
+					case 2:
+						printf("INSERIU EM SGT\n");
+						sgt = appendNodeCliente(sgt, 2, cursor->tempo);	
+						break;
+					case 3:
+						printf("INSERIU EM CABO!\n");
+						cabo = appendNodeCliente(cabo, 3, cursor->tempo);	
+						break;
+					pthread_mutex_unlock(&lock);
+				}
+			} else {
+				printf("PAUSA!\n");
+				qtdPausas++;
+			}
+		} else {
+			printf("EXPULSO!!!!\n");
+		}
+		
+		printBarbearia();
+		cursor = cursor->prox;
+		sleep(qtdSleepTainha);
+	}
+	printf("\nSAIU DA FILA DE ESPERA");
+	//FIM DA FILA OU 3 PAUSAS!!!!!
+	//pthread_mutex_destroy(&lock);
+	pthread_exit(NULL);
+	return NULL;
+}
+
+void printBarbearia(){
+	printLista(oficial);
+	printf("\n");
+	printLista(sgt);
+	printf("\n");
+	printLista(cabo);
+	printf("\n");
 }
 
 int qtdAtualBarbearia(){
@@ -134,7 +202,7 @@ void printLista(nodeCliente_t *head){
 	nodeCliente_t *cursor = head;
 
 	while(cursor != NULL){
-		printf("CAT: %d | TEMPO: %d\n", cursor->categoria, cursor->tempo);
+		printf("[C:%d|T:%d] ", cursor->categoria, cursor->tempo);
 		cursor = cursor->prox;
 	}
 }
@@ -148,6 +216,17 @@ nodeCliente_t *criaNode(int catTemp, int tempoTemp){
 	node->prox = NULL;
 
 	return node; 
+}
+
+nodeCliente_t *shiftHead(nodeCliente_t *oldHead){
+	nodeCliente *cursor;
+	cursor = oldHead;
+
+	if(cursor == NULL){
+
+	}	
+	
+	return newHead; 
 }
 
 nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp){
