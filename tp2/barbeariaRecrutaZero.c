@@ -21,6 +21,7 @@ typedef struct ClienteParams {
 } clienteParams_t;
 
 pthread_mutex_t lock;
+sem_t semOficial, semSgt, semCabo;
 int qtdSleepTainha;
 int qtdPausas;
 
@@ -73,6 +74,7 @@ void *recrutaZero(){
 	nodeCliente_t *cursor = oficial;
 
 	while(cursor != NULL){
+		
 		cursor = cursor->prox;
 	}
 
@@ -99,8 +101,8 @@ void *sgtTainha(){
 		if(cursor->categoria != 0){
 			if(qtdAtualBarbearia() < MAX_BARBEARIA){
 				switch(cursor->categoria){
-					pthread_mutex_lock(&lock);
 					case 1:
+					//	sem_wait(&semOfici);
 						printf("INSERIU EM OFICIAL!\n");
 						oficial = appendNodeCliente(oficial, 1, cursor->tempo);	
 						break;
