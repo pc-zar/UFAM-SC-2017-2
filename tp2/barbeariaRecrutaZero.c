@@ -5,8 +5,8 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-#define MAX_CLIENTES 50
-#define MAX_BARBEARIA 25
+#define MAX_CLIENTES 25
+#define MAX_BARBEARIA 20
 #define MAX_BARBEIROS 1
 
 typedef struct NodeCliente{
@@ -37,6 +37,7 @@ void printBarbearia();
 int rand_range(int min_n, int max_n);
 void *sgtTainha();
 void *recrutaZero();
+void *tenenteEscovinha();
 nodeCliente_t *shiftHead(nodeCliente_t *head);
 void barbeiroPercorre();
 
@@ -45,7 +46,7 @@ int main(void){
 	filaEspera = initFilaEspera();
 	int inputQtdSleepTainha = 0;
 	int qtdSleepTainhaLock = 1;
-	pthread_t tSgtTainha, tRecrutaZero;
+	pthread_t tSgtTainha, tRecrutaZero, tTenenteEscovinha;
 	oficial = NULL;
 	sgt = NULL;
 	cabo = NULL;
@@ -68,18 +69,31 @@ int main(void){
 
 	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
 	pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
+	pthread_create(&tTenenteEscovinha, NULL, tenenteEscovinha, NULL);	
 
 	pthread_join(tSgtTainha, NULL);
 	pthread_join(tRecrutaZero, NULL);
+	pthread_join(tTenenteEscovinha, NULL);
 	
 	sem_destroy(&semOficial);
 	sem_destroy(&semSgt);
 	sem_destroy(&semCabo);
 
-	printf("\n");
-	printBarbearia();
-
 	return 0;
+}
+
+void *tenenteEscovinha(){
+	float barbeariaPerc = 0;
+
+	while(qtdAtualBarbearia() != 0){
+		
+		barbeariaPerc = qtdAtualBarbearia() / MAX_BARBEARIA;
+		
+		printf("%f%% CHEIO!\n", barbeariaPerc);
+		sleep(3);
+	}
+
+	return NULL;
 }
 
 void barbeiroPercorre(){
@@ -89,7 +103,7 @@ void barbeiroPercorre(){
 		int tempo = cursor->tempo;
 		sem_wait(&semOficial);
 			sleep(tempo);
-			printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
+			//printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
 			oficial = shiftHead(oficial);
 			sem_post(&semOficial);
 			cursor = oficial;
@@ -101,7 +115,7 @@ void barbeiroPercorre(){
 		int tempo = cursor->tempo;
 		sem_wait(&semSgt);
 		sleep(tempo);
-		printf("R0: REMOCAO EM Sgt | DURACAO: %d\n", tempo);
+		//printf("R0: REMOCAO EM Sgt | DURACAO: %d\n", tempo);
 		sgt = shiftHead(sgt);
 		sem_post(&semSgt);
 		cursor = sgt;
@@ -113,7 +127,7 @@ void barbeiroPercorre(){
 		int tempo = cursor->tempo;
 		sem_wait(&semCabo);
 		sleep(tempo);
-		printf("R0: REMOCAO EM cabo | DURACAO: %d\n", tempo);
+		//printf("R0: REMOCAO EM cabo | DURACAO: %d\n", tempo);
 		cabo = shiftHead(cabo);
 		sem_post(&semCabo);
 		cursor = cabo;
@@ -127,7 +141,7 @@ void *recrutaZero(){
 
 	//verificar se a barbearia ainda possui clientes apos o fim da thread do sgt tainha
 	if(qtdAtualBarbearia() != 0){
-		printf("BARBEARIA AINDA POSSUI CLIENTES!! REEXCUTAR BARBEIRO PARA ULTIMA VERIFICACAO\n");
+		//printf("BARBEARIA AINDA POSSUI CLIENTES!! REEXCUTAR BARBEIRO PARA ULTIMA VERIFICACAO\n");
 		while(qtdAtualBarbearia() != 0){
 			barbeiroPercorre();
 		}
@@ -148,37 +162,34 @@ void *sgtTainha(){
 				switch(cursor->categoria){
 					case 1:
 						sem_wait(&semOficial);
-						printf("INSERCAO EM OFICIAL!!!! | DURACAO: %d\n", cursor->tempo);
+						//printf("INSERCAO EM OFICIAL!!!! | DURACAO: %d\n", cursor->tempo);
 						oficial = appendNodeCliente(oficial, 1, cursor->tempo);	
 						sem_post(&semOficial);
 						break;
 					case 2:
-						//printf("INSERIU EM SGT\n");
 						sem_wait(&semSgt);
-						printf("INSERCAO EM SGT!!! | DURACAO: %d\n", cursor->tempo);
+						//printf("INSERCAO EM SGT!!! | DURACAO: %d\n", cursor->tempo);
 						sgt = appendNodeCliente(sgt, 2, cursor->tempo);	
 						sem_post(&semSgt);
 						break;
 					case 3:
-						//printf("INSERIU EM CABO!\n");
 						sem_wait(&semCabo);
-						printf("INSERCAO EM CABO!!! | DURACAO: %d\n", cursor->tempo);
+						//printf("INSERCAO EM CABO!!! | DURACAO: %d\n", cursor->tempo);
 						cabo = appendNodeCliente(cabo, 3, cursor->tempo);	
 						sem_post(&semCabo);
 						break;
 				}
 			} else {
-				printf("EXPULSO!!!\n");
+				//printf("EXPULSO!!!\n");
 			}
 		} else {
-			printf("PAUSA!\n");
+			//printf("PAUSA!\n");
 			qtdPausas++;
 		}
-		//printBarbearia();
 		cursor = cursor->prox;
 		sleep(qtdSleepTainha);
 	}
-	printf("SGT TAINHA TERMINOU SUA EXECUCAO\n");
+	//printf("SGT TAINHA TERMINOU SUA EXECUCAO\n");
 	pthread_exit(NULL);
 	return NULL;
 }
