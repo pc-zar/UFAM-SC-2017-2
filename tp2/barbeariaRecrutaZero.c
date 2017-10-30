@@ -23,6 +23,12 @@ typedef struct ClienteParams {
 sem_t semOficial, semSgt, semCabo;
 int qtdSleepTainha;
 int qtdPausas;
+int tempoTotalAtendimentoOficial;
+int tempoTotalAtendimentoSgt;
+int tempoTotalAtendimentoCabo;
+int qtdAtenOficial;
+int qtdAtenSgt;
+int qtdAtenCabo;
 
 //BARBEARIA
 nodeCliente_t *filaEspera, *oficial, *sgt, *cabo;
@@ -32,6 +38,7 @@ nodeCliente_t *initFilaEspera();
 void printLista(nodeCliente_t *head);
 nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp);
 nodeCliente_t *criaNode();
+int sizeFila(nodeCliente_t *head);
 int qtdAtualBarbearia();
 void printBarbearia();
 int rand_range(int min_n, int max_n);
@@ -40,12 +47,19 @@ void *recrutaZero();
 void *tenenteEscovinha();
 nodeCliente_t *shiftHead(nodeCliente_t *head);
 void barbeiroPercorre();
+void removeOficial();
+void removeSgt();
+void removeCabo();
 
 int main(void){
 	srand(time(NULL));
 	filaEspera = initFilaEspera();
 	int inputQtdSleepTainha = 0;
 	int qtdSleepTainhaLock = 1;
+	qtdAtenOficial = 0;
+	qtdAtenSgt = 0;
+	qtdAtenCabo = 0;
+
 	pthread_t tSgtTainha, tRecrutaZero, tTenenteEscovinha;
 	oficial = NULL;
 	sgt = NULL;
@@ -82,60 +96,141 @@ int main(void){
 	return 0;
 }
 
-void *tenenteEscovinha(){
+void printEstadoAtual(){
 	float barbeariaPerc = 0;
+	float oficialPerc = 0;
+	float sgtPerc = 0;
+	float caboPerc = 0;
 	float barbeariaPercLivre = 0;
+	
+	barbeariaPerc = ((float) qtdAtualBarbearia()) / MAX_BARBEARIA;
+	oficialPerc = ((float) sizeFila(oficial)) / MAX_BARBEARIA;
+	sgtPerc = ((float) sizeFila(sgt)) / MAX_BARBEARIA;
+	caboPerc = ((float) sizeFila(cabo)) / MAX_BARBEARIA;
+	
+	barbeariaPerc = barbeariaPerc * 100;
+	oficialPerc = oficialPerc * 100;
+	sgtPerc = sgtPerc * 100;
+	caboPerc = caboPerc * 100;
+	barbeariaPercLivre = 100 - barbeariaPerc;
+	printf("OFICIAL (%.f%%) | SGT (%.f%%) | CABO(%.f%%) | %.f%% LIVRE\n", oficialPerc, sgtPerc, caboPerc, barbeariaPercLivre);
+	printBarbearia();
+	printf("\n");
+}
 
-	while(qtdAtualBarbearia() != 0){
+void *tenenteEscovinha(){
+	int t = 0;
+	int ot = 0;
+	int st = 0;
+	int ct = 0;
+	int tamanhoOficialTotal = 0;
+	int tamanhoSgtTotal = 0;
+	int tamanhoCaboTotal = 0;
+	
+	while((qtdAtualBarbearia() != 0) || (qtdPausas != 3)){
+		printEstadoAtual();
+		if(sizeFila(oficial) == 0){
+			ot++;
+		}
 		
-		barbeariaPerc = ((float) qtdAtualBarbearia()) / MAX_BARBEARIA;
-		barbeariaPerc = barbeariaPerc * 100;
+		if(sizeFila(sgt) == 0){
+			st++;
+		}
 		
-		barbeariaPercLivre = 100 - barbeariaPerc;
+		if(sizeFila(cabo) == 0){
+			ct++;
+		}
 
-		//printf("%d\n", qtdAtualBarbearia());
-		printf("%.f%% LIVRE!\n", barbeariaPercLivre);
-		sleep(3);
+		tamanhoOficialTotal += sizeFila(oficial);
+		tamanhoSgtTotal += sizeFila(sgt);
+		tamanhoCaboTotal += sizeFila(cabo);
+		t++;
+		sleep(3);	
 	}
+
+	printf("\nFIM DO DIA!\n");
+
+	float oficialAvgComp = ((float) tamanhoOficialTotal) / (t - ot);
+	float sgtAvgComp = ((float) tamanhoSgtTotal) / (t - st);
+	float caboAvgComp = ((float) tamanhoCaboTotal) / (t - ct);
+	
+	float oficialAvgAten = ((float) tempoTotalAtendimentoOficial) / (t - ot);
+	float sgtAvgAten = ((float) tempoTotalAtendimentoSgt) / (t - st);
+	float caboAvgAten = ((float) tempoTotalAtendimentoCabo) / (t - ct);
+	
+
+	printf("COMPRIMENTO MEDIO: \n");
+	printf("oficial = %f | sgt = %f | cabo = %f", oficialAvgComp, sgtAvgComp, caboAvgComp);
+	printf("\nTEMPO MEDIO ATENDIMENTO: \n");
+	printf("oficial = %f | sgt = %f | cabo = %f", oficialAvgAten, sgtAvgAten, caboAvgAten);
+	printf("\nQTD DE ATENDIMENTOS POR CATEGORIA:\n");
+	printf("oficial = %d | sgt = %d | cabo = %d", qtdAtenOficial, qtdAtenSgt, qtdAtenCabo);
 
 	return NULL;
 }
 
-void barbeiroPercorre(){
+void removeOficial(){
 	nodeCliente_t *cursor = oficial;
 	//primeiro remocao de oficiais
 	while(cursor != NULL){
 		int tempo = cursor->tempo;
+		tempoTotalAtendimentoOficial += tempo;
 		sem_wait(&semOficial);
-			sleep(tempo);
-			//printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
-			oficial = shiftHead(oficial);
-			sem_post(&semOficial);
-			cursor = oficial;
+		sleep(tempo);
+		//printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
+		oficial = shiftHead(oficial);
+		qtdAtenOficial = qtdAtenOficial + 1; 
+		sem_post(&semOficial);
+		cursor = oficial;
 	}
-			
-	cursor = sgt;
-	//remocao de sargentos
+
+}
+
+void removeSgt(){
+	nodeCliente_t *cursor = sgt;
 	while(cursor != NULL){
 		int tempo = cursor->tempo;
+		tempoTotalAtendimentoSgt += tempo;
 		sem_wait(&semSgt);
 		sleep(tempo);
-		//printf("R0: REMOCAO EM Sgt | DURACAO: %d\n", tempo);
+		//printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
 		sgt = shiftHead(sgt);
+		qtdAtenSgt++;
 		sem_post(&semSgt);
 		cursor = sgt;
 	}
-	
-	cursor = cabo;
-	//remocao de cabos
+}
+
+void removeCabo(){
+	nodeCliente_t *cursor = cabo;
 	while(cursor != NULL){
 		int tempo = cursor->tempo;
+		tempoTotalAtendimentoCabo += tempo;
 		sem_wait(&semCabo);
 		sleep(tempo);
-		//printf("R0: REMOCAO EM cabo | DURACAO: %d\n", tempo);
+		//printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
 		cabo = shiftHead(cabo);
+		qtdAtenCabo++;
 		sem_post(&semCabo);
 		cursor = cabo;
+	}
+}
+
+void barbeiroPercorre(){
+	removeOficial();
+	if(oficial == NULL){
+		removeSgt();
+		if(oficial == NULL){
+			if(sgt == NULL){
+				removeCabo();
+			} else {
+				removeSgt();
+			}
+		} else {
+			removeOficial();
+		}
+	} else {
+		removeOficial();
 	}
 }
 
@@ -188,7 +283,7 @@ void *sgtTainha(){
 				//printf("EXPULSO!!!\n");
 			}
 		} else {
-			//printf("PAUSA!\n");
+			printf("PAUSA!\n");
 			qtdPausas++;
 		}
 		cursor = cursor->prox;
@@ -208,23 +303,9 @@ void printBarbearia(){
 	printf("\n");
 }
 
-int qtdAtualBarbearia(){
+int sizeFila(nodeCliente_t *head){
 	int qtd = 0;
-	nodeCliente_t *cursor = oficial;
-
-	while(cursor != NULL){
-		qtd++;
-		cursor = cursor->prox;
-	}
-
-	cursor = sgt;
-
-	while(cursor != NULL){
-		qtd++;
-		cursor = cursor->prox;
-	}
-	
-	cursor = cabo;
+	nodeCliente_t *cursor = head;
 
 	while(cursor != NULL){
 		qtd++;
@@ -232,6 +313,12 @@ int qtdAtualBarbearia(){
 	}
 
 	return qtd;
+
+}
+
+int qtdAtualBarbearia(){
+	int qtdTotal = 0;
+	return qtdTotal = sizeFila(oficial) + sizeFila(sgt) + sizeFila(cabo);
 }
 
 nodeCliente_t *initFilaEspera(){
