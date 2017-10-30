@@ -84,12 +84,17 @@ int main(void){
 
 void *tenenteEscovinha(){
 	float barbeariaPerc = 0;
+	float barbeariaPercLivre = 0;
 
 	while(qtdAtualBarbearia() != 0){
 		
-		barbeariaPerc = qtdAtualBarbearia() / MAX_BARBEARIA;
+		barbeariaPerc = ((float) qtdAtualBarbearia()) / MAX_BARBEARIA;
+		barbeariaPerc = barbeariaPerc * 100;
 		
-		printf("%f%% CHEIO!\n", barbeariaPerc);
+		barbeariaPercLivre = 100 - barbeariaPerc;
+
+		//printf("%d\n", qtdAtualBarbearia());
+		printf("%.f%% LIVRE!\n", barbeariaPercLivre);
 		sleep(3);
 	}
 
