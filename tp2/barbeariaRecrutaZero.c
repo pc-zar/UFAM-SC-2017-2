@@ -37,6 +37,7 @@ void printBarbearia();
 int rand_range(int min_n, int max_n);
 void *sgtTainha();
 void *recrutaZero();
+nodeCliente_t *shiftHead(nodeCliente_t *oldHead);
 
 int main(void){
 	srand(time(NULL));
@@ -61,10 +62,10 @@ int main(void){
 	}
 	
 	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
-	pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
+	//pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
 
 	pthread_join(tSgtTainha, NULL);
-	pthread_join(tRecrutaZero, NULL);
+	//pthread_join(tRecrutaZero, NULL);
 	return 0;
 }
 
@@ -72,27 +73,21 @@ void *recrutaZero(){
 	nodeCliente_t *cursor = oficial;
 
 	while(cursor != NULL){
-		qtd++;
 		cursor = cursor->prox;
 	}
 
 	cursor = sgt;
 
 	while(cursor != NULL){
-		qtd++;
 		cursor = cursor->prox;
 	}
 	
 	cursor = cabo;
 
 	while(cursor != NULL){
-		qtd++;
 		cursor = cursor->prox;
 	}
 	
-		
-	while()
-
 }
 
 void *sgtTainha(){
@@ -101,8 +96,8 @@ void *sgtTainha(){
 	cursor = filaEspera;
 	
 	while((cursor != NULL) && (qtdPausas != 3)){
-		if(qtdAtualBarbearia() < MAX_BARBEARIA){
-			if(cursor->categoria != 0){
+		if(cursor->categoria != 0){
+			if(qtdAtualBarbearia() < MAX_BARBEARIA){
 				switch(cursor->categoria){
 					pthread_mutex_lock(&lock);
 					case 1:
@@ -120,13 +115,12 @@ void *sgtTainha(){
 					pthread_mutex_unlock(&lock);
 				}
 			} else {
-				printf("PAUSA!\n");
-				qtdPausas++;
+				printf("EXPULSO!!!\n");
 			}
 		} else {
-			printf("EXPULSO!!!!\n");
+			printf("PAUSA!\n");
+			qtdPausas++;
 		}
-		
 		printBarbearia();
 		cursor = cursor->prox;
 		sleep(qtdSleepTainha);
@@ -218,8 +212,8 @@ nodeCliente_t *criaNode(int catTemp, int tempoTemp){
 	return node; 
 }
 
-nodeCliente_t *shiftHead(nodeCliente_t *oldHead){
-	nodeCliente *cursor;
+/*nodeCliente_t *shiftHead(nodeCliente_t *oldHead){
+	nodeCliente_t *cursor;
 	cursor = oldHead;
 
 	if(cursor == NULL){
@@ -227,7 +221,7 @@ nodeCliente_t *shiftHead(nodeCliente_t *oldHead){
 	}	
 	
 	return newHead; 
-}
+}*/
 
 nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp){
 	if(head == NULL){
