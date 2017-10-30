@@ -5,8 +5,8 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-#define MAX_CLIENTES 15
-#define MAX_BARBEARIA 9
+#define MAX_CLIENTES 50
+#define MAX_BARBEARIA 25
 #define MAX_BARBEIROS 1
 
 typedef struct NodeCliente{
@@ -20,7 +20,6 @@ typedef struct ClienteParams {
 	int tempo;
 } clienteParams_t;
 
-pthread_mutex_t lock;
 sem_t semOficial, semSgt, semCabo;
 int qtdSleepTainha;
 int qtdPausas;
@@ -38,7 +37,7 @@ void printBarbearia();
 int rand_range(int min_n, int max_n);
 void *sgtTainha();
 void *recrutaZero();
-nodeCliente_t *shiftHead(nodeCliente_t *oldHead);
+nodeCliente_t *shiftHead(nodeCliente_t *head);
 
 int main(void){
 	srand(time(NULL));
@@ -62,34 +61,74 @@ int main(void){
 		}
 	}
 	
+	sem_init(&semOficial, 0, 1);
+	sem_init(&semSgt, 0, 1);
+	sem_init(&semCabo, 0, 1);
+
 	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
-	//pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
+	pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
 
 	pthread_join(tSgtTainha, NULL);
-	//pthread_join(tRecrutaZero, NULL);
+	pthread_join(tRecrutaZero, NULL);
+	
+	sem_destroy(&semOficial);
+	sem_destroy(&semSgt);
+	sem_destroy(&semCabo);
+
+	printBarbearia();
+
+	//printf("\nBARBEARIA ANTIGA ACIMA\n");
+
+	//recrutaZero();
+
+	//printf("\n\nNOVA BARBEARIA DELETADA!!!!!\n");
+	//printBarbearia();
 	return 0;
 }
 
 void *recrutaZero(){
-	nodeCliente_t *cursor = oficial;
+	while(qtdAtualBarbearia() != 0){
+		nodeCliente_t *cursor = oficial;
+		//primeiro remocao de oficiais
+		while(cursor != NULL){
+			int tempo = cursor->tempo;
+			sem_wait(&semOficial);
+			sleep(tempo);
+			printf("REMOCAO EM 1\n");
+			oficial = shiftHead(oficial);
+			sem_post(&semOficial);
+			cursor = oficial;
+		}
 
-	while(cursor != NULL){
 		
-		cursor = cursor->prox;
-	}
-
-	cursor = sgt;
-
-	while(cursor != NULL){
-		cursor = cursor->prox;
+		cursor = sgt;
+	
+		//remocao de sargentos
+		while(cursor != NULL){
+			int tempo = cursor->tempo;
+			sem_wait(&semSgt);
+			sleep(tempo);
+			printf("REMOCAO EM 2\n");
+			sgt = shiftHead(sgt);
+			sem_post(&semSgt);
+			cursor = sgt;
+		}
+		
+		cursor = cabo;
+		//remocao de cabos
+		while(cursor != NULL){
+			int tempo = cursor->tempo;
+			sem_wait(&semCabo);
+			sleep(tempo);
+			printf("REMOCAO EM 3\n");
+			cabo = shiftHead(cabo);
+			sem_post(&semCabo);
+			cursor = cabo;
+		}
 	}
 	
-	cursor = cabo;
-
-	while(cursor != NULL){
-		cursor = cursor->prox;
-	}
-	
+		pthread_exit(NULL);	
+		return NULL;	
 }
 
 void *sgtTainha(){
@@ -102,32 +141,38 @@ void *sgtTainha(){
 			if(qtdAtualBarbearia() < MAX_BARBEARIA){
 				switch(cursor->categoria){
 					case 1:
-					//	sem_wait(&semOfici);
-						printf("INSERIU EM OFICIAL!\n");
+						sem_wait(&semOficial);
+						printf("INSERCAO EM 1!!!!\n");
 						oficial = appendNodeCliente(oficial, 1, cursor->tempo);	
+						sem_post(&semOficial);
 						break;
 					case 2:
-						printf("INSERIU EM SGT\n");
+						//printf("INSERIU EM SGT\n");
+						sem_wait(&semSgt);
+						printf("INSERCAO EM 2!!!\n");
 						sgt = appendNodeCliente(sgt, 2, cursor->tempo);	
+						sem_post(&semSgt);
 						break;
 					case 3:
-						printf("INSERIU EM CABO!\n");
+						//printf("INSERIU EM CABO!\n");
+						sem_wait(&semCabo);
+						printf("INSERCAO EM 3!!!\n");
 						cabo = appendNodeCliente(cabo, 3, cursor->tempo);	
+						sem_post(&semCabo);
 						break;
-					pthread_mutex_unlock(&lock);
 				}
 			} else {
-				printf("EXPULSO!!!\n");
+				//printf("EXPULSO!!!\n");
 			}
 		} else {
-			printf("PAUSA!\n");
+			//printf("PAUSA!\n");
 			qtdPausas++;
 		}
-		printBarbearia();
+		//printBarbearia();
 		cursor = cursor->prox;
 		sleep(qtdSleepTainha);
 	}
-	printf("\nSAIU DA FILA DE ESPERA");
+	//printf("\nSAIU DA FILA DE ESPERA");
 	//FIM DA FILA OU 3 PAUSAS!!!!!
 	//pthread_mutex_destroy(&lock);
 	pthread_exit(NULL);
@@ -214,16 +259,17 @@ nodeCliente_t *criaNode(int catTemp, int tempoTemp){
 	return node; 
 }
 
-/*nodeCliente_t *shiftHead(nodeCliente_t *oldHead){
-	nodeCliente_t *cursor;
-	cursor = oldHead;
-
-	if(cursor == NULL){
-
-	}	
+nodeCliente_t *shiftHead(nodeCliente_t *head){	
+	nodeCliente_t *toDelete;
 	
-	return newHead; 
-}*/
+	if(head != NULL){
+		toDelete = head;
+		head = head->prox;
+		free(toDelete);
+	}
+
+	return head;
+}
 
 nodeCliente_t *appendNodeCliente(nodeCliente_t *head, int catTemp, int tempoTemp){
 	if(head == NULL){
