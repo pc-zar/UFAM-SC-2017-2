@@ -7,7 +7,6 @@
 
 #define MAX_CLIENTES 1000
 #define MAX_BARBEARIA 20
-#define MAX_BARBEIROS 1
 
 typedef struct NodeCliente{
 	int categoria;
@@ -46,6 +45,9 @@ int rand_range(int min_n, int max_n);
 void *sgtTainha();
 void *recrutaZero();
 void *dentinho();
+void *recrutaZeroCasoC();
+void *dentinhoCasoC();
+void *otto();
 void *tenenteEscovinha();
 nodeCliente_t *shiftHead(nodeCliente_t *head);
 void barbeiroPercorre();
@@ -54,13 +56,15 @@ void removeSgt();
 void removeCabo();
 void casoA();
 void casoB();
+void casoC();
 
 int main(void){
 	srand(time(NULL));
 	filaEspera = initFilaEspera();
 	int inputQtdSleepTainha = 0;
 	int qtdSleepTainhaLock = 1;
-	
+	int inputCaso = 0;
+
 	qtdAtenOficial = 0;
 	qtdAtenSgt = 0;
 	qtdAtenCabo = 0;
@@ -89,9 +93,26 @@ int main(void){
 			printf("ESCOLHA DE 1 ATE 5!\n\n");
 		}
 	}
-	
-	//casoA();
-	casoB();
+
+	while(inputCaso == 0){
+		printf("DIGITE O NUMERO CORRESPONDENTE AO CASO DESEJADO\n");
+		printf("(1) - CASO A\n");
+		printf("(2) - CASO B\n");
+		printf("(3) - CASO C\n");
+		scanf("%d", &inputCaso);
+	}
+
+	switch(inputCaso){
+		case 1:
+			casoA();
+			break;
+		case 2:
+			casoB();
+			break;
+		case 3:
+			casoC();
+			break;
+	}
 
 	sem_destroy(&semOficial);
 	sem_destroy(&semSgt);
@@ -109,7 +130,6 @@ void casoA(){
 	pthread_join(tSgtTainha, NULL);
 	pthread_join(tRecrutaZero, NULL);
 	pthread_join(tTenenteEscovinha, NULL);
-
 }
 
 void casoB(){
@@ -123,7 +143,72 @@ void casoB(){
 	pthread_join(tRecrutaZero, NULL);
 	pthread_join(tDentinho, NULL);
 	pthread_join(tTenenteEscovinha, NULL);
+}
 
+void casoC(){
+	pthread_t tSgtTainha, tRecrutaZero, tDentinho, tOtto, tTenenteEscovinha;
+	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
+	pthread_create(&tRecrutaZero, NULL, recrutaZeroCasoC, NULL);	
+	pthread_create(&tDentinho, NULL, dentinhoCasoC, NULL);	
+	pthread_create(&tOtto, NULL, otto, NULL);	
+	pthread_create(&tTenenteEscovinha, NULL, tenenteEscovinha, NULL);	
+
+	pthread_join(tSgtTainha, NULL);
+	pthread_join(tRecrutaZero, NULL);
+	pthread_join(tDentinho, NULL);
+	pthread_join(tOtto, NULL);
+	pthread_join(tTenenteEscovinha, NULL);
+}
+
+void *recrutaZeroCasoC(){
+	while(lockTainha == 0){
+		removeOficial();
+	}
+
+	pthread_exit(NULL);
+	return NULL;
+}
+
+void *dentinhoCasoC(){
+	while(lockTainha == 0){
+		nodeCliente_t *cursor = sgt;
+		while(cursor != NULL){
+			// ao contrario da funcao removerOficial() usada pelos casos A e B, agora ele ira se dedicar exclusivamente a lista ate o fim.
+			int tempo = cursor->tempo;
+			tempoTotalAtendimentoSgt += tempo;
+			sem_wait(&semSgt);
+			sleep(tempo);
+			sgt = shiftHead(sgt);
+			qtdAtenSgt++;
+			sem_post(&semSgt);
+			cursor = sgt;
+		}
+		removeOficial();
+	}
+
+	pthread_exit(NULL);
+	return NULL;
+}
+
+void *otto(){
+	while(lockTainha == 0){
+		nodeCliente_t *cursor = cabo;
+		while(cursor != NULL){
+			// ao contrario da funcao removerOficial() usada pelos casos A e B, agora ele ira se dedicar exclusivamente a lista ate o fim.
+			int tempo = cursor->tempo;
+			tempoTotalAtendimentoCabo += tempo;
+			sem_wait(&semCabo);
+			sleep(tempo);
+			cabo = shiftHead(cabo);
+			qtdAtenCabo++;
+			sem_post(&semCabo);
+			cursor = cabo;
+		}
+		removeSgt();
+	}
+	pthread_exit(NULL);
+	return NULL;
+	
 }
 
 void printEstadoAtual(){
