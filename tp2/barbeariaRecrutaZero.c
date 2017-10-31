@@ -5,7 +5,7 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-#define MAX_CLIENTES 25
+#define MAX_CLIENTES 1000
 #define MAX_BARBEARIA 20
 #define MAX_BARBEIROS 1
 
@@ -52,20 +52,31 @@ void barbeiroPercorre();
 void removeOficial();
 void removeSgt();
 void removeCabo();
+void casoA();
+void casoB();
 
 int main(void){
 	srand(time(NULL));
 	filaEspera = initFilaEspera();
 	int inputQtdSleepTainha = 0;
 	int qtdSleepTainhaLock = 1;
+	
 	qtdAtenOficial = 0;
 	qtdAtenSgt = 0;
 	qtdAtenCabo = 0;
-
-	pthread_t tSgtTainha, tRecrutaZero, tDentinho, tTenenteEscovinha;
 	oficial = NULL;
 	sgt = NULL;
 	cabo = NULL;
+	lockTainha = 0;
+	sem_init(&semOficial, 0, 1);
+	sem_init(&semSgt, 0, 1);
+	sem_init(&semCabo, 0, 1);
+	
+	/*
+	printf("LISTA DE CLIENTES:\n");
+	printLista(filaEspera);
+	printf("\n");
+	*/
 
 	while(qtdSleepTainhaLock == 1){	
 		printf("Por quanto tempo (em segundos) Sgt. Tainha deve dormir? (escolha de 1 ate 5):");
@@ -79,21 +90,9 @@ int main(void){
 		}
 	}
 	
-	lockTainha = 0;
-	sem_init(&semOficial, 0, 1);
-	sem_init(&semSgt, 0, 1);
-	sem_init(&semCabo, 0, 1);
+	//casoA();
+	casoB();
 
-	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
-	pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
-	//pthread_create(&tDentinho, NULL, dentinho, NULL);	
-	pthread_create(&tTenenteEscovinha, NULL, tenenteEscovinha, NULL);	
-
-	pthread_join(tSgtTainha, NULL);
-	pthread_join(tRecrutaZero, NULL);
-	//pthread_join(tDentinho, NULL);
-	pthread_join(tTenenteEscovinha, NULL);
-	
 	sem_destroy(&semOficial);
 	sem_destroy(&semSgt);
 	sem_destroy(&semCabo);
@@ -101,7 +100,33 @@ int main(void){
 	return 0;
 }
 
-int printEstadoAtual(){
+void casoA(){
+	pthread_t tSgtTainha, tRecrutaZero, tTenenteEscovinha;
+	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
+	pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
+	pthread_create(&tTenenteEscovinha, NULL, tenenteEscovinha, NULL);	
+
+	pthread_join(tSgtTainha, NULL);
+	pthread_join(tRecrutaZero, NULL);
+	pthread_join(tTenenteEscovinha, NULL);
+
+}
+
+void casoB(){
+	pthread_t tSgtTainha, tRecrutaZero, tDentinho, tTenenteEscovinha;
+	pthread_create(&tSgtTainha, NULL, sgtTainha, NULL);	
+	pthread_create(&tRecrutaZero, NULL, recrutaZero, NULL);	
+	pthread_create(&tDentinho, NULL, dentinho, NULL);	
+	pthread_create(&tTenenteEscovinha, NULL, tenenteEscovinha, NULL);	
+
+	pthread_join(tSgtTainha, NULL);
+	pthread_join(tRecrutaZero, NULL);
+	pthread_join(tDentinho, NULL);
+	pthread_join(tTenenteEscovinha, NULL);
+
+}
+
+void printEstadoAtual(){
 	float barbeariaPerc = 0;
 	float oficialPerc = 0;
 	float sgtPerc = 0;
@@ -118,16 +143,11 @@ int printEstadoAtual(){
 	sgtPerc = sgtPerc * 100;
 	caboPerc = caboPerc * 100;
 	barbeariaPercLivre = 100 - barbeariaPerc;
+	
 	printf("OFICIAL (%.f%%) | SGT (%.f%%) | CABO(%.f%%) | %.f%% LIVRE\n", oficialPerc, sgtPerc, caboPerc, barbeariaPercLivre);
 	printf("\n");
 	printBarbearia();
 	printf("\n");
-
-	if(barbeariaPerc == 0){
-		return 1;
-	}
-
-	return 0;
 }
 
 void *tenenteEscovinha(){
@@ -139,41 +159,60 @@ void *tenenteEscovinha(){
 	int tamanhoSgtTotal = 0;
 	int tamanhoCaboTotal = 0;
 	
-	while((qtdAtualBarbearia() != 0) || (qtdPausas != 3)){
+	while((lockTainha == 0 || qtdAtualBarbearia() != 0)){
+		if(oficial == NULL){
+			ot++;
+		} else {
+			tamanhoOficialTotal += sizeFila(oficial);
+		}
+		if(sgt == NULL){
+			st++;
+		} else {
+			tamanhoSgtTotal += sizeFila(sgt);
+		}
+		if(cabo == NULL){
+			ct++;
+		} else {
+			tamanhoCaboTotal += sizeFila(cabo);
+		}
+		t++;	
 		printEstadoAtual();
-		sleep(1);	
+		sleep(3);	
 	}
 
-	printf("\nFIM DO DIA!\n");
+	//printEstadoAtual();
+	printf("\nFIM DO DIA!\n\n");
 
 	float oficialAvgComp = ((float) tamanhoOficialTotal) / (t - ot);
 	float sgtAvgComp = ((float) tamanhoSgtTotal) / (t - st);
 	float caboAvgComp = ((float) tamanhoCaboTotal) / (t - ct);
 	
-	float oficialAvgAten = ((float) tempoTotalAtendimentoOficial) / (t - ot);
-	float sgtAvgAten = ((float) tempoTotalAtendimentoSgt) / (t - st);
-	float caboAvgAten = ((float) tempoTotalAtendimentoCabo) / (t - ct);
+	
+	float oficialAvgAten = ((float) tempoTotalAtendimentoOficial) / qtdAtenOficial;
+	float sgtAvgAten = ((float) tempoTotalAtendimentoSgt) / qtdAtenSgt;
+	float caboAvgAten = ((float) tempoTotalAtendimentoCabo) / qtdAtenCabo;
 	
 
 	printf("COMPRIMENTO MEDIO: \n");
-	printf("oficial = %f | sgt = %f | cabo = %f", oficialAvgComp, sgtAvgComp, caboAvgComp);
+	printf("oficial = %.2f | sgt = %.2f | cabo = %.2f\n", oficialAvgComp, sgtAvgComp, caboAvgComp);
+	
 	printf("\nTEMPO MEDIO ATENDIMENTO: \n");
-	printf("oficial = %f | sgt = %f | cabo = %f", oficialAvgAten, sgtAvgAten, caboAvgAten);
+	printf("oficial = %.2f | sgt = %.2f | cabo = %.2f\n", oficialAvgAten, sgtAvgAten, caboAvgAten);
+	
 	printf("\nQTD DE ATENDIMENTOS POR CATEGORIA:\n");
 	printf("oficial = %d | sgt = %d | cabo = %d\n", qtdAtenOficial, qtdAtenSgt, qtdAtenCabo);
-
+	
+	pthread_exit(NULL);
 	return NULL;
 }
 
 void removeOficial(){
 	nodeCliente_t *cursor = oficial;
-	//primeiro remocao de oficiais
 	while(cursor != NULL){
 		int tempo = cursor->tempo;
 		tempoTotalAtendimentoOficial += tempo;
 		sem_wait(&semOficial);
 		sleep(tempo);
-		//printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
 		oficial = shiftHead(oficial);
 		qtdAtenOficial = qtdAtenOficial + 1; 
 		sem_post(&semOficial);
@@ -184,14 +223,11 @@ void removeOficial(){
 void removeSgt(){
 	nodeCliente_t *cursor = sgt;
 	while(cursor != NULL){
-		if(oficial == NULL){
-			removeOficial();
-		}
+		removeOficial();
 		int tempo = cursor->tempo;
 		tempoTotalAtendimentoSgt += tempo;
 		sem_wait(&semSgt);
 		sleep(tempo);
-		//printf("R0: REMOCAO em Oficial | DURACAO: %d\n", tempo);
 		sgt = shiftHead(sgt);
 		qtdAtenSgt++;
 		sem_post(&semSgt);
@@ -202,12 +238,8 @@ void removeSgt(){
 void removeCabo(){
 	nodeCliente_t *cursor = cabo;
 	while(cursor != NULL){
-		/*if(oficial != NULL){
-			removeOficial();
-		}*/
-		if(sgt != NULL){
-			removeSgt();
-		}
+		removeOficial();
+		removeSgt();
 		int tempo = cursor->tempo;
 		tempoTotalAtendimentoCabo += tempo;
 		sem_wait(&semCabo);
@@ -217,14 +249,6 @@ void removeCabo(){
 		sem_post(&semCabo);
 		cursor = cabo;
 	}
-	
-	/*if(oficial != NULL){
-		removeOficial();
-	}
-	if(sgt != NULL){
-		removeSgt();
-	}*/
-	
 }
 
 void barbeiroPercorre(){
@@ -234,15 +258,22 @@ void barbeiroPercorre(){
 }
 
 void *recrutaZero(){
-	while(1 == 1){
+	while(lockTainha == 0){
 		barbeiroPercorre();
 	}
 
-	pthread_exit(NULL);	
-	return NULL;	
+	pthread_exit(NULL);
+	return NULL;
 }
 
 void *dentinho(){
+	while(lockTainha == 0){
+		barbeiroPercorre();
+	}
+
+	pthread_exit(NULL);
+	return NULL;
+
 }
 
 void *sgtTainha(){
@@ -275,7 +306,7 @@ void *sgtTainha(){
 						break;
 				}
 			} else {
-				//printf("EXPULSO!!!\n");
+				printf("EXPULSO!!!\n");
 			}
 		} else {
 			//printf("PAUSA!\n");
@@ -284,7 +315,9 @@ void *sgtTainha(){
 		cursor = cursor->prox;
 		sleep(qtdSleepTainha);
 	}
-	printf("SGT TAINHA TERMINOU SUA EXECUCAO\n");
+	if(qtdPausas == 3){
+		printf("\n ////////SGT TAINHA SAIU APOS 3 PAUSAS CONSECUTIVAS///////////\n\n");
+	}
 	lockTainha = 1;
 	pthread_exit(NULL);
 	return NULL;
