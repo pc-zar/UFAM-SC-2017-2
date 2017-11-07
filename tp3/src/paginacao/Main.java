@@ -1,43 +1,31 @@
 package paginacao;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 
 public class Main {
 
     public static void main(String[] args) {
-        //criando array com 8000 elementos para representar a memoria
-        final int memoriaSize = 8000;
-        int[] memoria = new int[memoriaSize];
+        final int memoriaSize = 5;
+        ArrayList<Struct> memoria = new ArrayList<Struct>();
+        int qtdFifo = 0;
+        String entrada = "1,1;2,1;3,1;4,1;2,1;1,1;5,1;6,1;2,1;1,1;2,1;3,1;7,1;6,1;3,1;2,1;1,1;2,1;3,1;6,1;0,0;";
+        String[] aux0 = entrada.split(";");
 
-        for(int i = 0; i < memoriaSize; i++){
-            memoria[i] = -1;
-        }
+        for (String auxObj: aux0) {
+            String[] aux1 = auxObj.split(",");
+            int processo = Integer.parseInt(aux1[0]);
+            int page = Integer.parseInt(aux1[1]);
 
-        //inicializando string de referencia
-        CadeiaReferencia cr;
-        cr = new CadeiaReferencia();
+            Struct strCand = new Struct(processo, page);
 
-        System.out.println("Size: "+cr.getCadeia().size());
-
-        for(int i = 0; i < cr.getCadeia().size(); i++){
-            System.out.println(cr.getCadeia().get(i));
-        }
-
-        for(int i = 0; i < cr.getCadeia().size(); i++){
-            int j = 0;
-            int processo = cr.getCadeia().get(i);
-            int page = cr.getCadeia().get(i + 1);
-
-            //algoritmo caminha pela memoria procurando por lugar livre
-            while(memoria[j] != -1){
-                j++;
+            if(!memoria.contains(strCand)){
+                qtdFifo++;
+                if(memoria.size() >= memoriaSize){
+                    memoria.remove(0);
+                }
+                memoria.add(new Struct(processo, page));
             }
-
-            memoria[j] = processo;
-            memoria[j + 1] = page;
-
         }
-
     }
 
 }
