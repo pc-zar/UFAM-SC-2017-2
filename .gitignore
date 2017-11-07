@@ -5,3 +5,6 @@
 *.swm
 *.sw
 *.stackdump
+tp3/.idea/
+tp3/out/
+tp3/tp3.iml
