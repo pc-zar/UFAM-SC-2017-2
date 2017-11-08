@@ -4,12 +4,12 @@ public class Struct {
 
     private int processo;
     private int pagina;
-    private boolean bit;
+    private int bit;
 
     public Struct(int processo, int pagina) {
         setProcesso(processo);
         setPagina(pagina);
-        setBit(false);
+        setBit(0);
     }
 
     public int getProcesso() {
@@ -28,11 +28,11 @@ public class Struct {
         this.pagina = pagina;
     }
 
-    public boolean getBit() {
+    public int getBit() {
         return bit;
     }
 
-    public void setBit(boolean bit) {
+    public void setBit(int bit) {
         this.bit = bit;
     }
 }
