@@ -47,7 +47,7 @@ public class Algoritmo {
 
     private int lru(String[] entradaTratada){
         int qtdMiss = 0;
-        ArrayList<Struct> memoria = new ArrayList<Struct>();
+        ArrayList<Struct    > memoria = new ArrayList<Struct>();
 
         for(int i = 0; i < entradaTratada.length; i++){
             String[] aux = entradaTratada[i].split(",");
@@ -58,9 +58,8 @@ public class Algoritmo {
             if(memoriaHitIndex(memoria, s) >= 0){
                 qtdMiss++;
                 if(memoria.size() == memoriaSize){
-                    System.out.println("ENCHEU!!!!");
 
-                    /*int j = 0;
+                    int j = 0;
 
                     //verifica as structs que não foram chamados anteriormente
                     while((j < memoria.size()) && (memoria.get(j).getBit() != 0)){
@@ -71,15 +70,13 @@ public class Algoritmo {
                     if(j != memoria.size()){
                         memoria.add(j, s);
                     } else {
-                        //todas foram chamadas
-
-                    }*/
+                        //todas foram chamadas pelo menos uma vez
+                    }
                 } else {
                     memoria.add(s);
                 }
             } else {
                 int indexReferenciado = (memoriaHitIndex(memoria, s) * (-1)) - constLru;
-                System.out.println(indexReferenciado);
                 memoria.get(indexReferenciado).setBit(memoria.get(indexReferenciado).getBit() + 1);
             }
         }
