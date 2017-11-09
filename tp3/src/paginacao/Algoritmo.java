@@ -1,11 +1,12 @@
 package paginacao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Algoritmo {
 
     public static int memoriaSize = 5;
-    public static int constLru = 1917;
+    public static int constLru = 1999;
 
     private int qtdFaltas;
 
@@ -18,6 +19,7 @@ public class Algoritmo {
                 setQtdFaltas(lru(entrada));
                 break;
             case 3:
+                setQtdFaltas(segundaChance(entrada));
                 break;
             default:
                 break;
@@ -34,8 +36,13 @@ public class Algoritmo {
             int page = Integer.parseInt(aux[1]);
             Struct s = new Struct(processo, page);
 
+            /*caso a função retorne algum inteiro maior ou igual a zero,
+            significa que o processo terá que ser inserido na memória*/
             if(memoriaHitIndex(memoria, s) >= 0){
                 qtdMiss++;
+                /*se a memória estiver cheia, remove o primeiro elemento do array
+                antes de adicionar o novo processo
+                */
                 if(memoria.size() == memoriaSize){
                     memoria.remove(0);
                 }
@@ -47,7 +54,42 @@ public class Algoritmo {
 
     private int lru(String[] entradaTratada){
         int qtdMiss = 0;
-        ArrayList<Struct    > memoria = new ArrayList<Struct>();
+        ArrayList<Struct> memoria = new ArrayList<Struct>();
+        ArrayList<Integer> listaBitEnvelhecimento = new ArrayList<Integer>();
+
+        for(int i = 0; i < entradaTratada.length; i++){
+            String[] aux = entradaTratada[i].split(",");
+
+            int processo = Integer.parseInt(aux[0]);
+            int page = Integer.parseInt(aux[1]);
+            Struct s = new Struct(processo, page);
+
+            if(memoriaHitIndex(memoria, s) >= 0){
+                qtdMiss++;
+                if(memoria.size() == memoriaSize){
+                    //varre a memoria e diz qual é o index mais antigo (mais à esquerda), e com menor bit
+                    int indexMenorBit = listaBitEnvelhecimento.indexOf(Collections.min(listaBitEnvelhecimento));
+                    memoria.remove(indexMenorBit);
+                }
+                memoria.add(s);
+            } else {
+                //caso tal processo já esteja em memoria, simular seu envelhecimento
+                int indexReferenciado = (memoriaHitIndex(memoria, s) * (-1)) - constLru;
+                memoria.get(indexReferenciado).setBit(memoria.get(indexReferenciado).getBit() + 1);
+            }
+
+            listaBitEnvelhecimento.clear();
+            for(int j = 0; j < memoria.size(); j++){
+                listaBitEnvelhecimento.add(memoria.get(j).getBit());
+            }
+
+        }
+        return qtdMiss;
+    }
+
+    private int segundaChance(String[] entradaTratada){
+        int qtdMiss = 0;
+        ArrayList<Struct> memoria = new ArrayList<Struct>();
 
         for(int i = 0; i < entradaTratada.length; i++){
             String[] aux = entradaTratada[i].split(",");
@@ -58,26 +100,25 @@ public class Algoritmo {
             if(memoriaHitIndex(memoria, s) >= 0){
                 qtdMiss++;
                 if(memoria.size() == memoriaSize){
-
                     int j = 0;
+                    while((j < memoria.size()) || memoria.get(j).getBit() != 0){
+                        memoria.get(j).setBit(0);
+                        if(memoria.get(j + 1).getBit() != 0){
+                            memoria.get(j + 1).setBit(0);
 
-                    //verifica as structs que não foram chamados anteriormente
-                    while((j < memoria.size()) && (memoria.get(j).getBit() != 0)){
+                        } else {
+                            //remove
+                        }
                         j++;
                     }
-
-                    //caso j chegue ao tamanho final, significa que pelo menos todas as structs foram chamadas
-                    if(j != memoria.size()){
-                        memoria.add(j, s);
-                    } else {
-                        //todas foram chamadas pelo menos uma vez
-                    }
-                } else {
-                    memoria.add(s);
+                    memoria.remove(0);
                 }
+                memoria.add(s);
             } else {
                 int indexReferenciado = (memoriaHitIndex(memoria, s) * (-1)) - constLru;
-                memoria.get(indexReferenciado).setBit(memoria.get(indexReferenciado).getBit() + 1);
+                if(memoria.get(indexReferenciado).getBit() == 0){
+                    memoria.get(indexReferenciado).setBit(1);
+                }
             }
         }
         return qtdMiss;
@@ -89,8 +130,7 @@ public class Algoritmo {
 
         while((i >= 0) && (i < memoria.size())){
             if (s.getProcesso() == memoria.get(i).getProcesso()
-                    && s.getPagina() == memoria.get(i).getPagina()
-                    && s.getBit() == memoria.get(i).getBit()){
+                    && s.getPagina() == memoria.get(i).getPagina()){
                 i = (i + constLru) * (-1);
             } else {
                 i++;
