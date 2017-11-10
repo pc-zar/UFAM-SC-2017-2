@@ -5,6 +5,7 @@ import java.util.Collections;
 
 public class Algoritmo {
 
+    //qtd de Quadros
     public static int memoriaSize = 5;
     public static int constLru = 1999;
 
