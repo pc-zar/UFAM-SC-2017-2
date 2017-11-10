@@ -90,6 +90,7 @@ public class Algoritmo {
     private int segundaChance(String[] entradaTratada){
         int qtdMiss = 0;
         ArrayList<Struct> memoria = new ArrayList<Struct>();
+        ArrayList<Integer> listaBitSegundaChance = new ArrayList<Integer>();
 
         for(int i = 0; i < entradaTratada.length; i++){
             String[] aux = entradaTratada[i].split(",");
@@ -101,17 +102,22 @@ public class Algoritmo {
                 qtdMiss++;
                 if(memoria.size() == memoriaSize){
                     int j = 0;
-                    while((j < memoria.size()) || memoria.get(j).getBit() != 0){
-                        memoria.get(j).setBit(0);
-                        if(memoria.get(j + 1).getBit() != 0){
-                            memoria.get(j + 1).setBit(0);
-
-                        } else {
-                            //remove
-                        }
+                    while((j < memoria.size()) && memoria.get(j).getBit() != 0){
                         j++;
                     }
-                    memoria.remove(0);
+
+                    if(j < memoria.size()){
+                        memoria.get(j).setBit(0);
+                    } else {
+                        //todos foram referenciados
+                        //zerar todos
+                        for(int k = 0; k < memoria.size(); k++){
+                            memoria.get(k).setBit(0);
+                        }
+                    }
+                    //remove primeiro zero que ve pela frente
+                    int indexMenorBit = listaBitSegundaChance.indexOf(Collections.min(listaBitSegundaChance));
+                    memoria.remove(indexMenorBit);
                 }
                 memoria.add(s);
             } else {
@@ -120,6 +126,12 @@ public class Algoritmo {
                     memoria.get(indexReferenciado).setBit(1);
                 }
             }
+
+            listaBitSegundaChance.clear();
+            for(int j = 0; j < memoria.size(); j++){
+                listaBitSegundaChance.add(memoria.get(j).getBit());
+            }
+
         }
         return qtdMiss;
     }
