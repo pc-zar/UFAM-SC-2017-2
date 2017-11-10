@@ -11,7 +11,7 @@ public class Main {
     public static void main(String[] args) {
 
         String entrada = "";
-        String fileName = "src/paginacao/files/entrada5.txt";
+        String fileName = "src/paginacao/files/entrada9.txt";
 
         try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
             StringBuilder sb = new StringBuilder();
